@@ -1531,6 +1531,11 @@ end
 
 let should_bootstrap_len ~existing ~candidate =
   let length = Length.to_int in
+  printf
+    !"SHOULD BOOTSTRAP: %{sexp: int} - %{sexp: int} > (2 * %{sexp: int}) + \
+      %{sexp: int}\n\
+      %!"
+    (length candidate) (length existing) Constants.k Constants.delta ;
   length candidate - length existing > (2 * Constants.k) + Constants.delta
 
 let should_bootstrap ~existing ~candidate =
