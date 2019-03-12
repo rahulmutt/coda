@@ -102,7 +102,7 @@ module Reader0 = struct
       let rec read_deferred () =
         let%bind ready_reader =
           match List.find readers ~f:not_empty with
-          | Some reader -> Deferred.return reader
+          | Some reader -> Deferred.return (Some reader)
           | None ->
               let%map () =
                 Deferred.choose
@@ -110,12 +110,13 @@ module Reader0 = struct
                        Deferred.choice (Pipe.values_available r.reader)
                          (fun _ -> () ) ))
               in
-              List.find_exn readers ~f:not_empty
+              List.find readers ~f:not_empty
         in
-        match Pipe.read_now ready_reader.reader with
-        | `Nothing_available -> failwith "impossible"
-        | `Eof -> Deferred.return ()
-        | `Ok value -> Deferred.bind (f value) ~f:read_deferred
+        match Option.(ready_reader >>| fun r -> Pipe.read_now r.reader) with
+        | Some `Nothing_available -> failwith "impossible"
+        | Some `Eof -> Deferred.return ()
+        | Some (`Ok value) -> Deferred.bind (f value) ~f:read_deferred
+        | None -> Deferred.unit
       in
       List.iter readers ~f:assert_not_read ;
       read_deferred ()
