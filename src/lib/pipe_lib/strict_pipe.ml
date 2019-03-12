@@ -44,8 +44,9 @@ module Reader0 = struct
   let of_linear_pipe {Linear_pipe.Reader.pipe= reader; has_reader} =
     {reader; has_reader; downstreams= []}
 
-  let assert_not_read reader =
-    if reader.has_reader then raise Multiple_reads_attempted
+  let assert_not_read reader = ()
+
+  (* if reader.has_reader then raise Multiple_reads_attempted *)
 
   let wrap_reader reader = {reader; has_reader= false; downstreams= []}
 
