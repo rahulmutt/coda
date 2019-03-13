@@ -341,7 +341,7 @@ end = struct
 
   let bootstrap_wait_duration =
     Time.Span.of_ms
-    @@ ( Consensus.Constants.(c * ((2 * k) + delta) * block_window_duration_ms)
+    @@ ( Consensus.Constants.((delta + (c * k * 2)) * block_window_duration_ms)
        |> Float.of_int )
 
   let restart_node testnet ~log ~node ~action ~duration =
@@ -351,6 +351,7 @@ end = struct
     let%bind () = Api.stop testnet node in
     let%bind () = action () in
     let%bind () = after duration in
+    Logger.info log "Starting %d" node ;
     Api.start testnet node
 
   let restart_and_payment testnet ~node ~log ~largest_account_keypair ~duration
