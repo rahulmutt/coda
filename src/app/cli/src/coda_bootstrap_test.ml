@@ -29,6 +29,7 @@ let main () =
       ~largest_account_keypair ~payment_receiver:0
   in
   let%map () = after (Time.Span.of_sec 60.) in
+  Logger.info log "SUCCEEDED" ;
   ()
 
 let command =
