@@ -4,14 +4,40 @@ open Pipe_lib
 
 let rec funpow n f r = if n > 0 then funpow (n - 1) f (f r) else r
 
-type 'addr query = What_hash of 'addr | What_contents of 'addr | Num_accounts
-[@@deriving bin_io, sexp]
+module Query = struct
+  module V1 = struct
+    type 'addr t = What_hash of 'addr | What_contents of 'addr | Num_accounts
+    [@@deriving bin_io, sexp]
+  end
 
-type ('addr, 'hash, 'account) answer =
-  | Has_hash of 'addr * 'hash
-  | Contents_are of 'addr * 'account list
-  | Num_accounts of int * 'hash
-[@@deriving bin_io, sexp]
+  module Latest = V1
+
+  (* bin_io omitted intentionally *)
+  type 'addr t = 'addr Latest.t =
+    | What_hash of 'addr
+    | What_contents of 'addr
+    | Num_accounts
+  [@@deriving sexp]
+end
+
+module Answer = struct
+  module V1 = struct
+    type ('addr, 'hash, 'account) t =
+      | Has_hash of 'addr * 'hash
+      | Contents_are of 'addr * 'account list
+      | Num_accounts of int * 'hash
+    [@@deriving bin_io, sexp]
+  end
+
+  module Latest = V1
+
+  (* bin_io omitted intentionally *)
+  type ('addr, 'hash, 'account) t = ('addr, 'hash, 'account) Latest.t =
+    | Has_hash of 'addr * 'hash
+    | Contents_are of 'addr * 'account list
+    | Num_accounts of int * 'hash
+  [@@deriving sexp]
+end
 
 module type Inputs_intf = sig
   module Addr : Merkle_address.S
@@ -57,9 +83,29 @@ module type S = sig
 
   type index = int
 
-  type query
+  module Query :
+    sig
+      type 'addr t [@@deriving sexp]
 
-  type answer
+      module V1 : sig
+        type 'addr t [@@deriving bin_io, sexp]
+      end
+
+      module Latest = V1
+    end
+    with type 'addr t = 'addr V1.t
+
+  module Answer :
+    sig
+      type ('addr, 'hash, 'account) t [@@deriving sexp]
+
+      module V1 : sig
+        type ('addr, 'hash, 'account) t [@@deriving bin_io, sexp]
+      end
+
+      module Latest = V1
+    end
+    with type ('addr, 'hash, 'account) Latest.t = ('addr, 'hash, 'account) t
 
   module Responder : sig
     type t
@@ -173,8 +219,6 @@ module Make (Inputs : Inputs_intf) : sig
      and type addr := Addr.t
      and type merkle_path := MT.path
      and type account := Account.t
-     and type query := Addr.t query
-     and type answer := (Addr.t, Hash.t, Account.t) answer
 end = struct
   open Inputs
 
