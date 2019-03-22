@@ -7,6 +7,7 @@ open Coda_base
 open Blockchain_snark
 open Cli_lib
 open Coda_main
+open Signature_lib
 module YJ = Yojson.Safe
 module Git_sha = Daemon_rpcs.Types.Git_sha
 
@@ -297,9 +298,16 @@ let daemon logger =
        let time_controller =
          M.Inputs.Time.Controller.create M.Inputs.Time.Controller.basic
        in
+       let consensus_local_state =
+         Consensus.Local_state.create
+           (Option.map Config0.propose_keypair ~f:(fun keypair ->
+                let open Keypair in
+                Public_key.compress keypair.public_key ))
+       in
        let net_config =
          { M.Inputs.Net.Config.logger
          ; time_controller
+         ; consensus_local_state
          ; gossip_net_params=
              { timeout= Time.Span.of_sec 1.
              ; logger
@@ -325,8 +333,8 @@ let daemon logger =
               ~snark_pool_disk_location:(conf_dir ^/ "snark_pool")
               ~ledger_db_location:(conf_dir ^/ "ledger_db")
               ~snark_work_fee:snark_work_fee_flag ~receipt_chain_database
-              ~time_controller ?propose_keypair:Config0.propose_keypair ()
-              ~monitor)
+              ~time_controller ?propose_keypair:Config0.propose_keypair
+              ~monitor ~consensus_local_state ())
        in
        Run.handle_shutdown ~monitor ~conf_dir ~logger coda ;
        Async.Scheduler.within' ~monitor
