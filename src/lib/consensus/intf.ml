@@ -144,17 +144,17 @@ module type S = sig
     -> logger:Logger.t
     -> Protocol_state.Value.t * Consensus_transition_data.value
   (**
-   * Generate a new protocol state and consensus specific transition data
-   * for a new transition. Called from the proposer in order to generate
-   * a new transition to propose to the network. Returns `None` if a new
-   * transition cannot be generated.
-   *)
+    * Generate a new protocol state and consensus specific transition data
+    * for a new transition. Called from the proposer in order to generate
+    * a new transition to propose to the network. Returns `None` if a new
+    * transition cannot be generated.
+    *)
 
   val received_at_valid_time :
     Consensus_state.Value.t -> time_received:Unix_timestamp.t -> bool
   (**
-   * Check that a consensus state was received at a valid time.
-  *)
+    * Check that a consensus state was received at a valid time.
+    *)
 
   val next_state_checked :
        prev_state:Protocol_state.var
@@ -165,9 +165,9 @@ module type S = sig
        , _ )
        Snark_params.Tick.Checked.t
   (**
-   * Create a constrained, checked var for the next consensus state of
-   * a given consensus state and snark transition.
-  *)
+    * Create a constrained, checked var for the next consensus state of
+    * a given consensus state and snark transition.
+    *)
 
   val select :
        existing:Consensus_state.Value.t
@@ -175,10 +175,10 @@ module type S = sig
     -> logger:Logger.t
     -> [`Keep | `Take]
   (**
-   * Select between two ledger builder controller tips given the consensus
-   * states for the two tips. Returns `\`Keep` if the first tip should be
-   * kept, or `\`Take` if the second tip should be taken instead.
-  *)
+    * Select between two ledger builder controller tips given the consensus
+    * states for the two tips. Returns `\`Keep` if the first tip should be
+    * kept, or `\`Take` if the second tip should be taken instead.
+    *)
 
   val next_proposal :
        Unix_timestamp.t
@@ -190,11 +190,11 @@ module type S = sig
        | `Propose_now of Proposal_data.t
        | `Propose of Unix_timestamp.t * Proposal_data.t ]
   (**
-   * Determine if and when to perform the next transition proposal. Either
-   * informs the callee to check again at some time in the future, or to
-   * schedule a proposal at some time in the future, or to propose now
-   * and check again some time in the future.
-  *)
+    * Determine if and when to perform the next transition proposal. Either
+    * informs the callee to check again at some time in the future, or to
+    * schedule a proposal at some time in the future, or to propose now
+    * and check again some time in the future.
+    *)
 
   val lock_transition :
        Consensus_state.Value.t
@@ -203,15 +203,31 @@ module type S = sig
     -> snarked_ledger:Coda_base.Ledger.Any_ledger.witness
     -> unit
   (**
-   * A hook for managing local state when the locked tip is updated.
-  *)
+    * A hook for managing local state when the locked tip is updated.
+    *)
 
   val should_bootstrap :
        existing:Consensus_state.Value.t
     -> candidate:Consensus_state.Value.t
     -> bool
   (**
-     * Indicator of when we should bootstrap
+    * Indicator of when we should bootstrap
+    *)
+
+  val local_state_out_of_sync :
+       consensus_state:Consensus_state.Value.t
+    -> local_state:Local_state.t
+    -> bool
+  (**
+    * Predicate indicating whether or not the local state requires synchronization.
+    *)
+
+  val sync_local_state :
+       consensus_state:Consensus_state.Value.t
+    -> local_state:Local_state.t
+    -> unit Deferred.t
+  (**
+    * Synchronize local state over the network.
     *)
 
   val time_hum : Time.t -> string

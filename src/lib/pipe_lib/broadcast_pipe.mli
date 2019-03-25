@@ -14,7 +14,11 @@ module Reader : sig
   (** Iterate over the items in the pipe. The returned deferred is determined
       when the pipe closes. The first item f sees is the current item i.e. the
       one that would be returned by peek. If you use this with don't_wait_for, f
-      will not be invoked until execution returns to the scheduler .*)
+      will not be invoked until execution returns to the scheduler. *)
+
+  val iter_until : 'a t -> f:('a -> bool Deferred.t) -> unit Deferred.t
+  (** Same as [iter], except that [f] will stop being called once it returns
+      [true], resolving the deferred return by [iter_until]. *)
 
   val fold : 'a t -> init:'b -> f:('b -> 'a -> 'b Deferred.t) -> 'b Deferred.t
   (** Fold over the items in the pipe. Same notes as iter. *)
