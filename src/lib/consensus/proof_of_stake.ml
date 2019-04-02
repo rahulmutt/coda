@@ -279,6 +279,7 @@ module Local_state = struct
     ; proposer_public_key }
 
   type snapshot_identifier = Last_epoch_snapshot | Curr_epoch_snapshot
+  [@@deriving to_yojson]
 
   let get_snapshot t id =
     match id with
@@ -1660,6 +1661,11 @@ let select_epoch_data ~(consensus_state : Consensus_state.Value.t) ~epoch =
   else if in_next_epoch then Ok consensus_state.curr_epoch_data
   else Error ()
 
+let epoch_snapshot_name = function
+  | `Genesis -> "genesis"
+  | `Curr -> "curr"
+  | `Last -> "last"
+
 (* Select the correct epoch snapshot to use from local state for an epoch.
  * The rule for selecting the correct epoch snapshot is predicated off of
  * whether or not the first transition in the epoch in question has been
@@ -1689,68 +1695,79 @@ let select_epoch_snapshot ~(consensus_state : Consensus_state.Value.t)
     consensus_state.curr_epoch_data.length > Length.of_int Constants.k
   in
   if is_genesis_snapshot then
-    ("genesis", Some local_state.genesis_epoch_snapshot)
+    (`Genesis, Some local_state.genesis_epoch_snapshot)
   else if in_next_epoch || not epoch_is_finalized then
-    ("curr", local_state.curr_epoch_snapshot)
-  else ("last", local_state.last_epoch_snapshot)
+    (`Curr, local_state.curr_epoch_snapshot)
+  else (`Last, local_state.last_epoch_snapshot)
 
 type local_state_sync =
   { snapshot_id: Local_state.snapshot_identifier
   ; expected_root: Coda_base.Frozen_ledger_hash.t }
+[@@deriving to_yojson]
 
 let required_local_state_sync ~(consensus_state : Consensus_state.Value.t)
     ~local_state =
   let open Coda_base in
   let open Consensus_state in
-  (*
   let epoch = consensus_state.curr_epoch in
   let epoch_data =
     (* This should not fail since we are getting epoch data for the
      * same epoch that the consensus state is in. *)
     select_epoch_data ~consensus_state ~epoch
-    |> Result.map_error ~f:(Fn.const "unexpected failure while selecting epoch data from consensus state")
+    |> Result.map_error
+         ~f:
+           (Fn.const
+              "unexpected failure while selecting epoch data from consensus \
+               state")
     |> Result.ok_or_failwith
   in
-  *)
-  let required_snapshot_sync snapshot_id expected_root =
-    match Local_state.get_snapshot local_state snapshot_id with
-    | None -> Some {snapshot_id; expected_root}
-    | Some s ->
-        if
-          Ledger_hash.equal
-            (Frozen_ledger_hash.to_ledger_hash expected_root)
-            (Sparse_ledger.merkle_root s.ledger)
-        then None
-        else Some {snapshot_id; expected_root}
+  let source, _snapshot =
+    select_epoch_snapshot ~consensus_state ~local_state ~epoch ~epoch_data
   in
-  if consensus_state.curr_epoch_data.length <= Length.of_int Constants.k then
-    if
-      Ledger_hash.equal
-        (Ledger.merkle_root Genesis_ledger.t)
-        (Frozen_ledger_hash.to_ledger_hash
-           consensus_state.last_epoch_data.ledger.hash)
-    then None
-    else
+  if source = `Genesis then None
+    (* We never need to do work to have the genesis snapshot*)
+  else
+    let required_snapshot_sync snapshot_id expected_root =
+      match Local_state.get_snapshot local_state snapshot_id with
+      | None ->
+          if Frozen_ledger_hash.equal expected_root genesis_ledger_hash then
+            None
+          else Some {snapshot_id; expected_root}
+      | Some s ->
+          if
+            Ledger_hash.equal
+              (Frozen_ledger_hash.to_ledger_hash expected_root)
+              (Sparse_ledger.merkle_root s.ledger)
+          then None
+          else Some {snapshot_id; expected_root}
+    in
+    if consensus_state.curr_epoch_data.length <= Length.of_int Constants.k then
       Option.map
         (required_snapshot_sync Curr_epoch_snapshot
            consensus_state.last_epoch_data.ledger.hash) ~f:(fun x -> [x] )
-  else
-    match
-      Core.List.filter_map
-        [ required_snapshot_sync Curr_epoch_snapshot
-            consensus_state.curr_epoch_data.ledger.hash
-        ; required_snapshot_sync Last_epoch_snapshot
-            consensus_state.last_epoch_data.ledger.hash ]
-        ~f:Fn.id
-    with
-    | [] -> None
-    | ls -> Some ls
+    else
+      match
+        Core.List.filter_map
+          [ required_snapshot_sync Curr_epoch_snapshot
+              consensus_state.curr_epoch_data.ledger.hash
+          ; required_snapshot_sync Last_epoch_snapshot
+              consensus_state.last_epoch_data.ledger.hash ]
+          ~f:Fn.id
+      with
+      | [] -> None
+      | ls -> Some ls
 
 let sync_local_state ~logger ~local_state ~random_peers
     ~(query_peer : Network_peer.query_peer) requested_syncs =
   let open Local_state in
   let open Snapshot in
   let open Deferred.Let_syntax in
+  Logger.info logger "syncing local state, %d jobs"
+    (List.length requested_syncs)
+    ~location:__LOC__ ~module_:__MODULE__
+    ~metadata:
+      [ ( "requested_syncs"
+        , `List (List.map requested_syncs ~f:local_state_sync_to_yojson) ) ] ;
   let sync {snapshot_id; expected_root= target_ledger_hash} =
     Deferred.List.exists (random_peers 3) ~f:(fun peer ->
         match%map
@@ -1993,11 +2010,11 @@ let next_proposal now (state : Consensus_state.Value.t) ~local_state ~keypair
           Logger.info logger ~module_:__MODULE__ ~location:__LOC__
             "Unable to check vrf evaluation: %s_epoch_ledger does not exist \
              in local state"
-            source
+            (epoch_snapshot_name source)
       | Some snapshot ->
           Logger.info logger ~module_:__MODULE__ ~location:__LOC__
             !"using %s_epoch_snapshot root hash %{sexp:Coda_base.Ledger_hash.t}"
-            source
+            (epoch_snapshot_name source)
             (Coda_base.Sparse_ledger.merkle_root snapshot.ledger) ) ;
       snapshot
     in
