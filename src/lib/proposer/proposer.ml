@@ -277,6 +277,13 @@ module Make (Inputs : Inputs_intf) :
             in
             Some (protocol_state, internal_transition, witness) ) )
 
+  type query_peer =
+    { doit:
+        'r 'q.    Network_peer.Peer.t
+        -> (   Async_rpc_kernel.Versioned_rpc.Connection_with_menu.t
+            -> 'q
+            -> 'r Deferred.Or_error.t) -> 'q -> 'r Deferred.Or_error.t }
+
   let run ~logger ~get_completed_work ~transaction_pool ~time_controller
       ~keypair ~consensus_local_state ~frontier_reader ~transition_writer
       ~random_peers ~query_peer =

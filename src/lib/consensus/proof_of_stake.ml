@@ -1739,16 +1739,16 @@ let required_local_state_sync ~(consensus_state : Consensus_state.Value.t)
     | [] -> None
     | ls -> Some ls
 
-let sync_local_state ~logger ~local_state ~random_peers ~query_peer
-    requested_syncs =
+let sync_local_state ~logger ~local_state ~random_peers
+    ~(query_peer : Network_peer.query_peer) requested_syncs =
   let open Local_state in
   let open Snapshot in
   let open Deferred.Let_syntax in
   let sync {snapshot_id; expected_root= target_ledger_hash} =
     Deferred.List.exists (random_peers 3) ~f:(fun peer ->
         match%map
-          query_peer peer Rpcs.Get_epoch_ledger.dispatch_multi
-            target_ledger_hash
+          query_peer.query peer Rpcs.Get_epoch_ledger.dispatch_multi
+            (Coda_base.Frozen_ledger_hash.to_ledger_hash target_ledger_hash)
         with
         | Ok (Ok snapshot_ledger) ->
             let delegators =

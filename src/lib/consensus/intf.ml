@@ -240,12 +240,7 @@ module type S = sig
        logger:Logger.t
     -> local_state:Local_state.t
     -> random_peers:(int -> Network_peer.Peer.t list)
-    -> query_peer:(   Network_peer.Peer.t
-                   -> (   Versioned_rpc.Connection_with_menu.t
-                       -> 'q
-                       -> 'r Deferred.Or_error.t)
-                   -> 'q
-                   -> 'r Deferred.Or_error.t)
+    -> query_peer:Network_peer.query_peer
     -> local_state_sync list
     -> unit Deferred.Or_error.t
 
