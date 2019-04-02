@@ -578,7 +578,7 @@ module Make (Inputs : Inputs_intf) = struct
           ~transition_writer:t.proposer_transition_writer
           ~random_peers:(Net.random_peers t.net)
           ~query_peer:
-            {Network_peer.query = (fun a b c -> Net.query_peer t.net a b c)} )
+            {Network_peer.query= (fun a b c -> Net.query_peer t.net a b c)} )
 
   let create (config : Config.t) =
     let monitor = Option.value ~default:(Monitor.create ()) config.monitor in
