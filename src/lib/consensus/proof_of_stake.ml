@@ -552,7 +552,6 @@ module Vrf = struct
       (* This version can't be used right now because the field is too small. *)
       let _is_satisfied ~my_stake ~total_stake vrf_output =
         let open Snark_params.Tick in
-        let open Let_syntax in
         let open Number in
         let%bind lhs = of_bits vrf_output * Amount.var_to_number total_stake in
         let%bind rhs =
@@ -583,7 +582,6 @@ module Vrf = struct
   let%snarkydef get_vrf_evaluation shifted ~ledger ~message =
     let open Coda_base in
     let open Snark_params.Tick in
-    let open Let_syntax in
     let%bind private_key =
       request_witness Scalar.typ (As_prover.return Private_key)
     in
@@ -605,7 +603,6 @@ module Vrf = struct
     let%snarkydef check shifted ~(epoch_ledger : Epoch_ledger.var) ~epoch ~slot
         ~seed =
       let open Snark_params.Tick in
-      let open Let_syntax in
       let%bind winner_addr =
         request_witness Coda_base.Account.Index.Unpacked.typ
           (As_prover.return Winner_address)
@@ -1982,7 +1979,6 @@ let next_proposal now (state : Consensus_state.Value.t) ~local_state ~keypair
     (Int64.to_int now) (Epoch.to_int epoch) (Epoch.Slot.to_int slot)
     ( Int64.to_int @@ Time.Span.to_ms @@ Time.to_span_since_epoch
     @@ Epoch.start_time epoch ) ;
-  let epoch_transitioning = Epoch.equal epoch (Epoch.succ state.curr_epoch) in
   let next_slot =
     Logger.info logger ~module_:__MODULE__ ~location:__LOC__
       !"Selecting correct epoch data from state -- epoch by time: %d, state \
@@ -2235,7 +2231,6 @@ let%test_module "Proof of stake tests" =
       in
       let supply_increase = Currency.Amount.of_int 42 in
       (* setup ledger, needed to compute proposer_vrf_result here and handler below *)
-      let open Signature_lib in
       let open Coda_base in
       (* choose largest account as most likely to propose *)
       let ledger_data = Genesis_ledger.t in
@@ -2261,7 +2256,6 @@ let%test_module "Proof of stake tests" =
       (* build pieces needed to apply "update_var" *)
       let checked_computation =
         let open Snark_params.Tick in
-        let open Let_syntax in
         (* work in Checked monad *)
         let%bind previous_state =
           exists typ ~compute:(As_prover.return previous_consensus_state)
