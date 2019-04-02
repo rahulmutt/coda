@@ -1327,7 +1327,7 @@ module Consensus_state = struct
       =
     let open Field in
     Checked.equal
-      Checked.Infix.(
+      Checked.(
         (Epoch.pack_var epoch :> Var.t) + (Epoch.Slot.pack_var slot :> Var.t))
       (Var.constant zero)
 
