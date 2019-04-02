@@ -585,6 +585,15 @@ module Make (Inputs : Inputs_intf) = struct
       Rpcs.Transition_catchup.dispatch_multi
       (envelope_from_me t state_hash)
 
+  let query_peer :
+         t
+      -> Network_peer.Peer.t
+      -> (Versioned_rpc.Connection_with_menu.t -> 'q -> 'r Deferred.Or_error.t)
+      -> 'q
+      -> 'r Deferred.Or_error.t =
+   fun t peer rpc rpc_input ->
+    Gossip_net.query_peer t.gossip_net peer rpc rpc_input
+
   let get_ancestry_non_preferred_peers t input peers =
     let max_current_peers = 8 in
     let rec loop peers num_peers =

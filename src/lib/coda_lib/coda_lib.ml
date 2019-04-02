@@ -1,5 +1,6 @@
 open Core_kernel
 open Async_kernel
+open Async_rpc_kernel
 open Protocols
 open Pipe_lib
 open Strict_pipe
@@ -69,6 +70,13 @@ module type Network_intf = sig
        * sync_ledger_answer Envelope.Incoming.t )
        Linear_pipe.Writer.t
     -> unit
+
+  val query_peer :
+       t
+    -> Network_peer.Peer.t
+    -> (Versioned_rpc.Connection_with_menu.t -> 'q -> 'r Deferred.Or_error.t)
+    -> 'q
+    -> 'r Deferred.Or_error.t
 
   module Config : sig
     type t
@@ -199,6 +207,13 @@ module type Proposer_intf = sig
                          , synchronous
                          , unit Deferred.t )
                          Strict_pipe.Writer.t
+    -> random_peers:(int -> Network_peer.Peer.t list)
+    -> query_peer:(   Network_peer.Peer.t
+                   -> (   Versioned_rpc.Connection_with_menu.t
+                       -> 'q
+                       -> 'r Deferred.Or_error.t)
+                   -> 'q
+                   -> 'r Deferred.Or_error.t)
     -> unit
 end
 
@@ -545,7 +560,9 @@ module Make (Inputs : Inputs_intf) = struct
           ~time_controller:t.time_controller ~keypair
           ~consensus_local_state:t.consensus_local_state
           ~frontier_reader:t.transition_frontier
-          ~transition_writer:t.proposer_transition_writer )
+          ~transition_writer:t.proposer_transition_writer
+          ~random_peers:(Net.random_peers t.net)
+          ~query_peer:(Net.query_peer t.net) )
 
   let create (config : Config.t) =
     let monitor = Option.value ~default:(Monitor.create ()) config.monitor in

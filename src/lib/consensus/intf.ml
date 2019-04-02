@@ -233,7 +233,7 @@ module type S = sig
                        -> 'q
                        -> 'r Deferred.Or_error.t)
                    -> 'q
-                   -> 'r Deferred.t)
+                   -> 'r Deferred.Or_error.t)
     -> local_state_sync list
     -> unit Deferred.Or_error.t
   (**

@@ -3,6 +3,7 @@
 
 open Core_kernel
 open Async_kernel
+open Async_rpc_kernel
 open Pipe_lib
 include Coda_transition_frontier
 
@@ -1366,6 +1367,8 @@ module type Consensus_mechanism_intf = sig
 
   type time
 
+  type local_state_sync
+
   module Local_state : sig
     type t [@@deriving sexp]
 
@@ -1451,15 +1454,23 @@ module type Consensus_mechanism_intf = sig
     -> logger:Logger.t
     -> [`Keep | `Take]
 
-  val local_state_out_of_sync :
+  val required_local_state_sync :
        consensus_state:Consensus_state.Value.t
     -> local_state:Local_state.t
-    -> bool
+    -> local_state_sync list option
 
   val sync_local_state :
-       consensus_state:Consensus_state.Value.t
+       logger:Logger.t
     -> local_state:Local_state.t
-    -> unit Deferred.t
+    -> random_peers:(int -> Network_peer.Peer.t list)
+    -> query_peer:(   Network_peer.Peer.t
+                   -> (   Versioned_rpc.Connection_with_menu.t
+                       -> 'q
+                       -> 'r Deferred.Or_error.t)
+                   -> 'q
+                   -> 'r Deferred.Or_error.t)
+    -> local_state_sync list
+    -> unit Deferred.Or_error.t
 
   val genesis_protocol_state :
     (Protocol_state.Value.t, protocol_state_hash) With_hash.t
