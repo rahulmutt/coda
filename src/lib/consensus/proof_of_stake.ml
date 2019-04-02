@@ -1724,9 +1724,16 @@ let required_local_state_sync ~(consensus_state : Consensus_state.Value.t)
         else Some {snapshot_id; expected_root}
   in
   if consensus_state.curr_epoch_data.length <= Length.of_int Constants.k then
-    Option.map
-      (required_snapshot_sync Curr_epoch_snapshot
-         consensus_state.last_epoch_data.ledger.hash) ~f:(fun x -> [x] )
+    if
+      Ledger_hash.equal
+        (Ledger.merkle_root Genesis_ledger.t)
+        (Frozen_ledger_hash.to_ledger_hash
+           consensus_state.last_epoch_data.ledger.hash)
+    then None
+    else
+      Option.map
+        (required_snapshot_sync Curr_epoch_snapshot
+           consensus_state.last_epoch_data.ledger.hash) ~f:(fun x -> [x] )
   else
     match
       Core.List.filter_map
