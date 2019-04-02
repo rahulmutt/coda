@@ -309,7 +309,7 @@ let daemon logger =
          ; time_controller
          ; consensus_local_state
          ; gossip_net_params=
-             { timeout= Time.Span.of_sec 1.
+             { timeout= Time.Span.of_sec 3.
              ; logger
              ; target_peer_count= 8
              ; conf_dir

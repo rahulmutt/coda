@@ -7,23 +7,28 @@ open Coda_numbers
 module type Prover_state_intf = sig
   type t [@@deriving bin_io, sexp]
 
+  type pending_coinbase_witness
+
   val precomputed_handler : Snark_params.Tick.Handler.t
 
-  val handler : t -> Snark_params.Tick.Handler.t
+  val handler :
+       t
+    -> pending_coinbase:pending_coinbase_witness
+    -> Snark_params.Tick.Handler.t
 end
 
 (** Constants are defined with a single letter (latin or greek) based on
  * their usage in the Ouroboros suite of papers *)
 module type Shared_constants = sig
-  val k : int
   (** k is the number of blocks required to reach finality *)
+  val k : int
 
-  val coinbase : Currency.Amount.t
   (** The amount of money minted and given to the proposer whenever a block
    * is created *)
+  val coinbase : Currency.Amount.t
 
-  val block_window_duration_ms : Int64.t
   (** The window of time available to create a block *)
+  val block_window_duration_ms : Int64.t
 end
 
 module type S = sig
@@ -91,7 +96,9 @@ module type S = sig
 
   module Blockchain_state : Coda_base.Blockchain_state.S
 
-  module Prover_state : Prover_state_intf
+  module Prover_state :
+    Prover_state_intf
+    with type pending_coinbase_witness := Coda_base.Pending_coinbase_witness.t
 
   module Protocol_state :
     Coda_base.Protocol_state.S
@@ -133,6 +140,12 @@ module type S = sig
   val genesis_protocol_state :
     (Protocol_state.Value.t, Coda_base.State_hash.t) With_hash.t
 
+  (**
+   * Generate a new protocol state and consensus specific transition data
+   * for a new transition. Called from the proposer in order to generate
+   * a new transition to propose to the network. Returns `None` if a new
+   * transition cannot be generated.
+   *)
   val generate_transition :
        previous_protocol_state:Protocol_state.Value.t
     -> blockchain_state:Blockchain_state.Value.t
@@ -143,19 +156,17 @@ module type S = sig
     -> supply_increase:Currency.Amount.t
     -> logger:Logger.t
     -> Protocol_state.Value.t * Consensus_transition_data.value
-  (**
-    * Generate a new protocol state and consensus specific transition data
-    * for a new transition. Called from the proposer in order to generate
-    * a new transition to propose to the network. Returns `None` if a new
-    * transition cannot be generated.
-    *)
 
+  (**
+   * Check that a consensus state was received at a valid time.
+  *)
   val received_at_valid_time :
     Consensus_state.Value.t -> time_received:Unix_timestamp.t -> bool
-  (**
-    * Check that a consensus state was received at a valid time.
-    *)
 
+  (**
+   * Create a constrained, checked var for the next consensus state of
+   * a given consensus state and snark transition.
+  *)
   val next_state_checked :
        prev_state:Protocol_state.var
     -> prev_state_hash:Coda_base.State_hash.var
@@ -164,22 +175,24 @@ module type S = sig
     -> ( [`Success of Snark_params.Tick.Boolean.var] * Consensus_state.var
        , _ )
        Snark_params.Tick.Checked.t
-  (**
-    * Create a constrained, checked var for the next consensus state of
-    * a given consensus state and snark transition.
-    *)
 
+  (**
+   * Select between two ledger builder controller tips given the consensus
+   * states for the two tips. Returns `\`Keep` if the first tip should be
+   * kept, or `\`Take` if the second tip should be taken instead.
+  *)
   val select :
        existing:Consensus_state.Value.t
     -> candidate:Consensus_state.Value.t
     -> logger:Logger.t
     -> [`Keep | `Take]
-  (**
-    * Select between two ledger builder controller tips given the consensus
-    * states for the two tips. Returns `\`Keep` if the first tip should be
-    * kept, or `\`Take` if the second tip should be taken instead.
-    *)
 
+  (**
+   * Determine if and when to perform the next transition proposal. Either
+   * informs the callee to check again at some time in the future, or to
+   * schedule a proposal at some time in the future, or to propose now
+   * and check again some time in the future.
+  *)
   val next_proposal :
        Unix_timestamp.t
     -> Consensus_state.Value.t
@@ -189,41 +202,40 @@ module type S = sig
     -> [ `Check_again of Unix_timestamp.t
        | `Propose_now of Proposal_data.t
        | `Propose of Unix_timestamp.t * Proposal_data.t ]
-  (**
-    * Determine if and when to perform the next transition proposal. Either
-    * informs the callee to check again at some time in the future, or to
-    * schedule a proposal at some time in the future, or to propose now
-    * and check again some time in the future.
-    *)
 
+  (**
+   * A hook for managing local state when the locked tip is updated.
+  *)
   val lock_transition :
        Consensus_state.Value.t
     -> Consensus_state.Value.t
     -> local_state:Local_state.t
     -> snarked_ledger:Coda_base.Ledger.Any_ledger.witness
     -> unit
-  (**
-    * A hook for managing local state when the locked tip is updated.
-    *)
 
+  (**
+     * Indicator of when we should bootstrap
+    *)
   val should_bootstrap :
        existing:Consensus_state.Value.t
     -> candidate:Consensus_state.Value.t
     -> bool
-  (**
-    * Indicator of when we should bootstrap
-    *)
 
+  (** Data needed to synchronization the lcoal state. *)
   type local_state_sync
 
+  (**
+    * Determine if the local state requires synchronization. Returns [None] if it does
+    * not, [Some jobs] if so. [jobs] should be passed to [sync_local_state].
+    *)
   val required_local_state_sync :
        consensus_state:Consensus_state.Value.t
     -> local_state:Local_state.t
     -> local_state_sync list option
-  (**
-    * Predicate indicating whether or not the local state requires synchronization.
-    *)
 
+  (**
+    * Synchronize local state over the network.
+    *)
   val sync_local_state :
        logger:Logger.t
     -> local_state:Local_state.t
@@ -236,14 +248,11 @@ module type S = sig
                    -> 'r Deferred.Or_error.t)
     -> local_state_sync list
     -> unit Deferred.Or_error.t
-  (**
-    * Synchronize local state over the network.
-    *)
 
-  val time_hum : Time.t -> string
   (** Return a string that tells a human what the consensus view of an instant in time is.
     *
     * This is mostly useful for PoStake and other consensus mechanisms that have their own
     * notions of time.
     *)
+  val time_hum : Time.t -> string
 end

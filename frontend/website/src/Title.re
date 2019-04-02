@@ -1,21 +1,21 @@
 // TODO: On mobile left align
 
 let component = ReasonReact.statelessComponent("Title");
-let make = (~fontColor, ~text, _children) => {
+let make = (~noBottomMargin=false, ~fontColor, ~text, _children) => {
   ...component,
   render: _self =>
     <div
       className=Css.(
         style([
-          marginBottom(`rem(2.25)),
           media(
-            Style.MediaQuery.notSmallMobile,
+            Style.MediaQuery.notMobile,
             [
               display(`flex),
               justifyContent(`center),
               width(`percent(100.0)),
             ],
           ),
+          ...noBottomMargin ? [] : [marginBottom(`rem(2.25))],
         ])
       )>
       <h1

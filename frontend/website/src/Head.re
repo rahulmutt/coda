@@ -3,11 +3,6 @@ let legacyStylesheets =
     <link
       rel="stylesheet"
       type_="text/css"
-      href="https://fonts.googleapis.com/css?family=Rubik:500"
-    />
-    <link
-      rel="stylesheet"
-      type_="text/css"
       href="https://fonts.googleapis.com/css?family=Alegreya+Sans:300,300i,400,400i,500,500i,700,700i,800,800i,900,900i"
     />
     <link
@@ -24,10 +19,15 @@ let make = (~extra, ~filename, _children) => {
   ...component,
   render: _self =>
     <head>
+      {ReactDOMRe.createElement(
+         "meta",
+         ~props=ReactDOMRe.objToDOMProps({"charSet": "utf-8"}),
+         [||],
+       )}
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <meta
         property="og:image"
-        content="https://codaprotocol.com/static/img/compare-outlined-png.png"
+        content="https://codaprotocol.com/static/img/coda_facebook_OG.jpg"
       />
       <meta property="og:updated_time" content="1526001445" />
       <meta property="og:type" content="website" />
@@ -35,18 +35,24 @@ let make = (~extra, ~filename, _children) => {
       <meta property="og:title" content="Coda Cryptocurrency Protocol" />
       <meta
         property="og:description"
-        content="That means that no matter how many transactions are performed, verifying the blockchain remains inexpensive and accessible to everyone."
+        content="Coda is the first cryptocurrency with a succinct blockchain. Our lightweight blockchain means anyone can use Coda directly from any device, in less data than a few tweets."
       />
       <meta
         name="description"
-        content="That means that no matter how many transactions are performed, verifying the blockchain remains inexpensive and accessible to everyone."
+        content="Coda is the first cryptocurrency with a succinct blockchain. Our lightweight blockchain means anyone can use Coda directly from any device, in less data than a few tweets."
       />
       extra
       <title> {ReasonReact.string("Coda Cryptocurrency Protocol")} </title>
+      <link rel="stylesheet" type_="text/css" href="/fonts.css" />
       <link
         rel="stylesheet"
         type_="text/css"
         href="https://use.typekit.net/mta7mwm.css"
+      />
+      <link
+        rel="stylesheet"
+        type_="text/css"
+        href="https://fonts.googleapis.com/css?family=Rubik:300,500"
       />
       <link
         rel="stylesheet"
@@ -69,6 +75,17 @@ let make = (~extra, ~filename, _children) => {
       <script
         src="https://www.googletagmanager.com/gtag/js?id=UA-115553548-2"
       />
+      // On recent versions of firefox, the browser will do a "flash of
+      // unstyled content" for images by displaying the alt text(!) before the
+      // image loads. Of course, we must disable this.
+      <style>
+        {ReasonReact.string(
+           {|
+      img:-moz-loading {
+        visibility: hidden;
+      }|},
+         )}
+      </style>
       <RunScript>
         {|
   window.dataLayer = window.dataLayer || [];

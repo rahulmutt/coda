@@ -76,7 +76,7 @@ let run_test () : unit Deferred.t =
         ; time_controller
         ; consensus_local_state
         ; gossip_net_params=
-            { Inputs.Net.Gossip_net.Config.timeout= Time.Span.of_sec 1.
+            { Inputs.Net.Gossip_net.Config.timeout= Time.Span.of_sec 3.
             ; logger
             ; target_peer_count= 8
             ; initial_peers= []
@@ -103,7 +103,7 @@ let run_test () : unit Deferred.t =
       Main.start coda ;
       don't_wait_for
         (Strict_pipe.Reader.iter_without_pushback
-           (Main.strongest_ledgers coda)
+           (Main.verified_transitions coda)
            ~f:ignore) ;
       let wait_until_cond ~(f : t -> bool) ~(timeout : Float.t) =
         let rec go () =
@@ -334,7 +334,7 @@ let run_test () : unit Deferred.t =
         assert (block_count coda > block_count')
       else
         let%bind _ =
-          test_multiple_payments other_accounts (pks other_accounts) 5.
+          test_multiple_payments other_accounts (pks other_accounts) 7.
         in
         test_duplicate_payments sender_keypair receiver_keypair )
 
