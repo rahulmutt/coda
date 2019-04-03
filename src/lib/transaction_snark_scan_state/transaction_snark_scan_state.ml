@@ -178,7 +178,7 @@ end = struct
               , Transaction_with_witness.Stable.V1.t )
               Parallel_scan.State.Stable.V1.t
           ; mutable job_count: int }
-        [@@deriving sexp, bin_io]
+        [@@deriving sexp, bin_io, version]
       end
 
       include T

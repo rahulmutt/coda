@@ -71,12 +71,12 @@ module State : sig
    *)
 
   (* bin_io omitted intentionally *)
-  type ('a, 'd) t [@@deriving sexp]
+  type ('a, 'd) t [@@deriving sexp, version]
 
   module Stable :
     sig
       module V1 : sig
-        type ('a, 'd) t [@@deriving sexp, bin_io]
+        type ('a, 'd) t [@@deriving sexp, bin_io, version]
       end
 
       module Latest = V1
