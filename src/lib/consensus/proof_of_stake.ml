@@ -1726,10 +1726,7 @@ let required_local_state_sync ~(consensus_state : Consensus_state.Value.t)
   else
     let required_snapshot_sync snapshot_id expected_root =
       match Local_state.get_snapshot local_state snapshot_id with
-      | None ->
-          if Frozen_ledger_hash.equal expected_root genesis_ledger_hash then
-            None
-          else Some {snapshot_id; expected_root}
+      | None -> Some {snapshot_id; expected_root}
       | Some s ->
           if
             Ledger_hash.equal
