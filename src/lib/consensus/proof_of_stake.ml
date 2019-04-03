@@ -1737,7 +1737,8 @@ let required_local_state_sync ~(consensus_state : Consensus_state.Value.t)
     if consensus_state.curr_epoch_data.length <= Length.of_int Constants.k then
       Option.map
         (required_snapshot_sync Curr_epoch_snapshot
-           consensus_state.last_epoch_data.ledger.hash) ~f:(fun x -> [x] )
+           consensus_state.last_epoch_data.ledger.hash)
+        ~f:Non_empty_list.singleton
     else
       match
         Core.List.filter_map
@@ -1748,7 +1749,7 @@ let required_local_state_sync ~(consensus_state : Consensus_state.Value.t)
           ~f:Fn.id
       with
       | [] -> None
-      | ls -> Some ls
+      | ls -> Non_empty_list.of_list_opt ls
 
 let sync_local_state ~logger ~local_state ~random_peers
     ~(query_peer : Network_peer.query_peer) requested_syncs =

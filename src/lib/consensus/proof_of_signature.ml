@@ -325,7 +325,7 @@ let should_bootstrap ~existing:_ ~candidate:_ = false
 
 let time_hum now = Core_kernel.Time.to_string now
 
-type local_state_sync = unit
+type local_state_sync = unit [@@deriving to_yojson]
 
 let required_local_state_sync ~consensus_state:_ ~local_state:_ = None
 

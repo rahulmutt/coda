@@ -1458,7 +1458,7 @@ module type Consensus_mechanism_intf = sig
 
   type time
 
-  type local_state_sync
+  type local_state_sync [@@deriving to_yojson]
 
   module Local_state : sig
     type t [@@deriving sexp]
@@ -1557,7 +1557,7 @@ module type Consensus_mechanism_intf = sig
     -> local_state:Local_state.t
     -> random_peers:(int -> Network_peer.Peer.t list)
     -> query_peer:Network_peer.query_peer
-    -> local_state_sync list
+    -> local_state_sync Non_empty_list.t
     -> unit Deferred.Or_error.t
 
   val genesis_protocol_state :

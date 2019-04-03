@@ -222,7 +222,7 @@ module type S = sig
     -> bool
 
   (** Data needed to synchronization the lcoal state. *)
-  type local_state_sync
+  type local_state_sync [@@deriving to_yojson]
 
   (**
     * Determine if the local state requires synchronization. Returns [None] if it does
@@ -241,7 +241,7 @@ module type S = sig
     -> local_state:Local_state.t
     -> random_peers:(int -> Network_peer.Peer.t list)
     -> query_peer:Network_peer.query_peer
-    -> local_state_sync list
+    -> local_state_sync Non_empty_list.t
     -> unit Deferred.Or_error.t
 
   (** Return a string that tells a human what the consensus view of an instant in time is.
