@@ -31,10 +31,8 @@ module Proof_type = struct
   module Stable = struct
     module V1 = struct
       module T = struct
-        let version = 1
-
         type t = [`Base | `Merge]
-        [@@deriving bin_io, sexp, hash, compare, yojson]
+        [@@deriving bin_io, sexp, hash, compare, yojson, version]
       end
 
       include T
@@ -61,16 +59,35 @@ end
 
 module Pending_coinbase_stack_state = struct
   (*State of the coinbase stack for the current transaction snark*)
-  module T = struct
-    type t =
-      { source: Pending_coinbase.Stack.Stable.V1.t
-      ; target: Pending_coinbase.Stack.Stable.V1.t }
-    [@@deriving sexp, bin_io, hash, compare, eq, fields, yojson]
+  module Stable = struct
+    module V1 = struct
+      module T = struct
+        type t =
+          { source: Pending_coinbase.Stack.Stable.V1.t
+          ; target: Pending_coinbase.Stack.Stable.V1.t }
+        [@@deriving sexp, bin_io, hash, compare, eq, fields, yojson, version]
+      end
+
+      include T
+      include Registration.Make_latest_version (T)
+    end
+
+    module Latest = V1
+
+    module Module_decl = struct
+      let name = "transaction_snark_pending_coinbase_stack_state"
+
+      type latest = Latest.t
+    end
+
+    module Registrar = Registration.Make (Module_decl)
+    module Registered_V1 = Registrar.Register (V1)
   end
 
-  include T
-  include Hashable.Make_binable (T)
-  include Comparable.Make (T)
+  type t = Stable.Latest.t [@@deriving sexp, hash, compare, eq, yojson]
+
+  include Hashable.Make_binable (Stable.Latest)
+  include Comparable.Make (Stable.Latest)
 end
 
 module Statement = struct
@@ -83,10 +100,11 @@ module Statement = struct
           { source: Coda_base.Frozen_ledger_hash.Stable.V1.t
           ; target: Coda_base.Frozen_ledger_hash.Stable.V1.t
           ; supply_increase: Currency.Amount.Stable.V1.t
-          ; pending_coinbase_stack_state: Pending_coinbase_stack_state.t
+          ; pending_coinbase_stack_state:
+              Pending_coinbase_stack_state.Stable.V1.t
           ; fee_excess: Currency.Fee.Signed.Stable.V1.t
           ; proof_type: Proof_type.Stable.V1.t }
-        [@@deriving sexp, bin_io, hash, compare, yojson]
+        [@@deriving sexp, bin_io, hash, compare, yojson, version]
       end
 
       include T
