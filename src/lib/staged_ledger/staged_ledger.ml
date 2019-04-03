@@ -1638,6 +1638,11 @@ let%test_module "test" =
         module Stable = struct
           module V1 = struct
             type t = unit [@@deriving bin_io, sexp, yojson]
+
+            (* test code, don't need actual versioning *)
+            let version = 1
+
+            let __versioned__ = true
           end
 
           module Latest = V1
@@ -1941,6 +1946,11 @@ let%test_module "test" =
               ; proof_type: [`Base | `Merge] }
             [@@deriving sexp, bin_io, compare, hash, yojson, eq]
 
+            (* test code, don't need to assure this type is actually versioned *)
+            let version = 1
+
+            let __versioned__ = true
+
             let merge s1 s2 =
               let open Or_error.Let_syntax in
               let%bind _ =
@@ -2041,6 +2051,11 @@ let%test_module "test" =
           module Stable = struct
             module V1 = struct
               type t = transaction [@@deriving sexp, bin_io]
+
+              (* test code, don't need to assure this type is actually versioned *)
+              let version = 1
+
+              let __versioned__ = true
             end
 
             module Latest = V1
@@ -2388,7 +2403,20 @@ let%test_module "test" =
       end
 
       module Transaction_witness = struct
-        type t = {ledger: Sparse_ledger.t} [@@deriving bin_io, sexp]
+        module Stable = struct
+          module V1 = struct
+            type t = {ledger: Sparse_ledger.t} [@@deriving bin_io, sexp]
+
+            (* test code, don't need to assure this type is actually versioned *)
+            let version = 1
+
+            let __versioned__ = true
+          end
+
+          module Latest = V1
+        end
+
+        type t = Stable.Latest.t = {ledger: Sparse_ledger.t} [@@deriving sexp]
       end
     end
 

@@ -41,7 +41,7 @@ module type Sok_message_intf = sig
 
   module Stable : sig
     module V1 : sig
-      type t [@@deriving sexp, bin_io]
+      type t [@@deriving sexp, bin_io, version]
     end
 
     module Latest = V1
@@ -192,7 +192,13 @@ end
 module type Transaction_witness_intf = sig
   type sparse_ledger
 
-  type t = {ledger: sparse_ledger} [@@deriving bin_io, sexp]
+  type t = {ledger: sparse_ledger} [@@deriving sexp]
+
+  module Stable : sig
+    module V1 : sig
+      type nonrec t = t [@@deriving bin_io, sexp, version]
+    end
+  end
 end
 
 module type Protocol_state_hash_intf = sig
@@ -309,7 +315,7 @@ module type Ledger_intf = sig
     module Stable :
       sig
         module V1 : sig
-          type t [@@deriving sexp, bin_io]
+          type t [@@deriving sexp, bin_io, version]
         end
 
         module Latest = V1
@@ -528,7 +534,7 @@ module type Ledger_proof_statement_intf = sig
           ; pending_coinbase_stack_state: pending_coinbase_stack_state
           ; fee_excess: Fee.Signed.t
           ; proof_type: [`Base | `Merge] }
-        [@@deriving sexp, bin_io, compare]
+        [@@deriving sexp, bin_io, compare, version]
       end
     end
     with type V1.t = t
@@ -553,7 +559,7 @@ module type Ledger_proof_intf = sig
   module Stable :
     sig
       module V1 : sig
-        type t [@@deriving sexp, bin_io, yojson]
+        type t [@@deriving sexp, bin_io, yojson, version]
       end
 
       module Latest = V1

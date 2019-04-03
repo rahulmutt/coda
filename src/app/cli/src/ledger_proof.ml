@@ -19,10 +19,8 @@ module Prod :
   module Stable = struct
     module V1 = struct
       module T = struct
-        let version = 1
-
         type t = Transaction_snark.Stable.V1.t
-        [@@deriving bin_io, sexp, yojson]
+        [@@deriving bin_io, sexp, yojson, version]
       end
 
       include T

@@ -117,7 +117,8 @@ module type Signed_intf = sig
     module V1 : sig
       type nonrec ('magnitude, 'sgn) t_ = ('magnitude, 'sgn) t_
 
-      type nonrec t = t [@@deriving bin_io, sexp, hash, compare, eq, yojson]
+      type nonrec t = t
+      [@@deriving bin_io, sexp, hash, compare, eq, yojson, version]
     end
 
     module Latest = V1

@@ -35,6 +35,8 @@ module Job = struct
 
             include T
           end
+
+          module Latest = V1
         end
       end
 
@@ -93,7 +95,7 @@ module Stable = struct
     (* don't use module registration here, because of type parameters *)
     module T = struct
       type ('a, 'd) t =
-        { jobs: ('a, 'd) Job.t Ring_buffer.t
+        { jobs: ('a, 'd) Job.t Ring_buffer.Stable.V1.t
         ; level_pointer: int Array.t
         ; capacity: int
         ; mutable acc: int * ('a * 'd list) option sexp_opaque
@@ -103,7 +105,12 @@ module Stable = struct
         ; mutable other_trees_data: 'd list list sexp_opaque
         ; stateful_work_order: int Queue.t
         ; mutable curr_job_seq_no: int }
-      [@@deriving sexp, bin_io, version]
+      [@@deriving sexp, bin_io]
+
+      (* TODO : wrap Array and Queue, all other types here don't need versioning *)
+      let version = 1
+
+      let __versioned__ = true
     end
 
     include T

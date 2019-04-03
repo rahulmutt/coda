@@ -93,7 +93,8 @@ module type Signed_intf = sig
     module V1 : sig
       type nonrec ('magnitude, 'sgn) t_ = ('magnitude, 'sgn) t_
 
-      type nonrec t = t [@@deriving bin_io, sexp, hash, compare, eq, yojson]
+      type nonrec t = t
+      [@@deriving bin_io, sexp, hash, compare, eq, yojson, version]
     end
 
     module Latest = V1
@@ -334,7 +335,7 @@ end = struct
           let version = 1
 
           type ('magnitude, 'sgn) t_ = {magnitude: 'magnitude; sgn: 'sgn}
-          [@@deriving bin_io, sexp, hash, compare, fields, eq, yojson]
+          [@@deriving bin_io, sexp, hash, compare, fields, eq, yojson, version]
 
           let create ~magnitude ~sgn = {magnitude; sgn}
 
