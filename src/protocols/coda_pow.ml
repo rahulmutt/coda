@@ -1550,7 +1550,7 @@ module type Consensus_mechanism_intf = sig
   val required_local_state_sync :
        consensus_state:Consensus_state.Value.t
     -> local_state:Local_state.t
-    -> local_state_sync list option
+    -> local_state_sync Non_empty_list.t option
 
   val sync_local_state :
        logger:Logger.t

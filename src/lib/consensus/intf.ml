@@ -231,7 +231,7 @@ module type S = sig
   val required_local_state_sync :
        consensus_state:Consensus_state.Value.t
     -> local_state:Local_state.t
-    -> local_state_sync list option
+    -> local_state_sync Non_empty_list.t option
 
   (**
     * Synchronize local state over the network.

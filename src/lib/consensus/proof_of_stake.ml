@@ -1728,12 +1728,11 @@ let required_local_state_sync ~(consensus_state : Consensus_state.Value.t)
       match Local_state.get_snapshot local_state snapshot_id with
       | None -> Some {snapshot_id; expected_root}
       | Some s ->
-          if
-            Ledger_hash.equal
-              (Frozen_ledger_hash.to_ledger_hash expected_root)
-              (Sparse_ledger.merkle_root s.ledger)
-          then None
-          else Some {snapshot_id; expected_root}
+          Option.some_if
+            (Ledger_hash.equal
+               (Frozen_ledger_hash.to_ledger_hash expected_root)
+               (Sparse_ledger.merkle_root s.ledger))
+            {snapshot_id; expected_root}
     in
     if consensus_state.curr_epoch_data.length <= Length.of_int Constants.k then
       Option.map
@@ -1756,6 +1755,7 @@ let sync_local_state ~logger ~local_state ~random_peers
   let open Local_state in
   let open Snapshot in
   let open Deferred.Let_syntax in
+  let requested_syncs = Non_empty_list.to_list requested_syncs in
   Logger.info logger "syncing local state, %d jobs"
     (List.length requested_syncs)
     ~location:__LOC__ ~module_:__MODULE__
