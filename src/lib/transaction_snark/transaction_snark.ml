@@ -21,7 +21,7 @@ module Input = struct
   type t =
     { source: Frozen_ledger_hash.Stable.V1.t
     ; target: Frozen_ledger_hash.Stable.V1.t
-    ; fee_excess: Currency.Amount.Signed.t
+    ; fee_excess: Currency.Amount.Signed.Stable.V1.t
     ; pending_coinbase_before: Pending_coinbase.Stack.Stable.V1.t
     ; pending_coinbase_after: Pending_coinbase.Stack.Stable.V1.t }
   [@@deriving bin_io]
