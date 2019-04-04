@@ -1531,7 +1531,7 @@ module type Consensus_mechanism_intf = sig
   val received_at_valid_time :
        Consensus_state.Value.t
     -> time_received:Unix_timestamp.t
-    -> (unit, string * Yojson.Safe.json list) result
+    -> (unit, (string * Yojson.Safe.json) list) result
 
   val next_proposal :
        Int64.t
