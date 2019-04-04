@@ -235,6 +235,18 @@ module Local_state = struct
       ; delegators: Currency.Balance.t Coda_base.Account.Index.Table.t }
     [@@deriving sexp]
 
+    let to_yojson {ledger; delegators} =
+      `Assoc
+        [ ( "ledger_hash"
+          , Coda_base.(
+              Sparse_ledger.merkle_root ledger |> Ledger_hash.to_yojson) )
+        ; ( "delegators"
+          , `Assoc
+              ( Hashtbl.to_alist delegators
+              |> List.map ~f:(fun (account, balance) ->
+                     ( Int.to_string account
+                     , `Int (Currency.Balance.to_int balance) ) ) ) ) ]
+
     let create_empty () =
       { ledger= Coda_base.Sparse_ledger.of_root Coda_base.Ledger_hash.empty_hash
       ; delegators= Coda_base.Account.Index.Table.create () }
@@ -246,7 +258,7 @@ module Local_state = struct
     ; mutable last_checked_slot_and_epoch: Epoch.t * Epoch.Slot.t
     ; genesis_epoch_snapshot: Snapshot.t
     ; proposer_public_key: Public_key.Compressed.t option }
-  [@@deriving sexp]
+  [@@deriving sexp, to_yojson]
 
   let create proposer_public_key =
     (* TODO: remove duplicated genesis ledger *)
@@ -1762,7 +1774,8 @@ let sync_local_state ~logger ~local_state ~random_peers
     ~location:__LOC__ ~module_:__MODULE__
     ~metadata:
       [ ( "requested_syncs"
-        , `List (List.map requested_syncs ~f:local_state_sync_to_yojson) ) ] ;
+        , `List (List.map requested_syncs ~f:local_state_sync_to_yojson) )
+      ; ("local_state", Local_state.to_yojson local_state) ] ;
   let sync {snapshot_id; expected_root= target_ledger_hash} =
     Deferred.List.exists (random_peers 3) ~f:(fun peer ->
         match%map
