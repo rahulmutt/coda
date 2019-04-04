@@ -1741,9 +1741,10 @@ let required_local_state_sync ~(consensus_state : Consensus_state.Value.t)
       | None -> Some {snapshot_id; expected_root}
       | Some s ->
           Option.some_if
-            (Ledger_hash.equal
-               (Frozen_ledger_hash.to_ledger_hash expected_root)
-               (Sparse_ledger.merkle_root s.ledger))
+            (not
+               (Ledger_hash.equal
+                  (Frozen_ledger_hash.to_ledger_hash expected_root)
+                  (Sparse_ledger.merkle_root s.ledger)))
             {snapshot_id; expected_root}
     in
     if consensus_state.curr_epoch_data.length <= Length.of_int Constants.k then
