@@ -79,7 +79,7 @@ module Debug :
         type t =
           Transaction_snark.Statement.Stable.V1.t
           * Sok_message.Digest.Stable.V1.t
-        [@@deriving sexp, bin_io, yojson]
+        [@@deriving sexp, bin_io, yojson, version]
       end
 
       include T

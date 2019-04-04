@@ -57,10 +57,27 @@ module Common : sig
   end
 end
 
-type ('common, 'body) t_ = {common: 'common; body: 'body}
-[@@deriving bin_io, eq, sexp, hash]
+module Poly : sig
+  module Stable : sig
+    module V1 : sig
+      type ('common, 'body) t = {common: 'common; body: 'body}
+      [@@deriving bin_io, eq, sexp, hash, yojson, compare, version]
+    end
 
-type t = (Common.t, Body.t) t_ [@@deriving eq, sexp, hash]
+    module Latest = V1
+  end
+end
+
+module Stable : sig
+  module V1 : sig
+    type t = (Common.Stable.V1.t, Body.Stable.V1.t) Poly.Stable.V1.t
+    [@@deriving bin_io, eq, sexp, hash, yojson, version]
+  end
+
+  module Latest = V1
+end
+
+type t = Stable.Latest.t [@@deriving eq, sexp, hash]
 
 val create :
      fee:Currency.Fee.t
@@ -72,14 +89,6 @@ val create :
 val length_in_triples : int
 
 val dummy : t
-
-module Stable : sig
-  module V1 : sig
-    type nonrec t = t [@@deriving bin_io, eq, sexp, hash, yojson]
-  end
-
-  module Latest = V1
-end
 
 val fold : t -> bool Triple.t Fold.t
 

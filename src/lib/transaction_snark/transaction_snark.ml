@@ -84,7 +84,10 @@ module Pending_coinbase_stack_state = struct
     module Registered_V1 = Registrar.Register (V1)
   end
 
-  type t = Stable.Latest.t [@@deriving sexp, hash, compare, eq, yojson]
+  type t = Stable.Latest.t =
+    { source: Pending_coinbase.Stack.Stable.V1.t
+    ; target: Pending_coinbase.Stack.Stable.V1.t }
+  [@@deriving sexp, hash, compare, eq, yojson]
 
   include Hashable.Make_binable (Stable.Latest)
   include Comparable.Make (Stable.Latest)
@@ -185,7 +188,8 @@ module Stable = struct
         ; target: Frozen_ledger_hash.Stable.V1.t
         ; proof_type: Proof_type.Stable.V1.t
         ; supply_increase: Amount.Stable.V1.t
-        ; pending_coinbase_stack_state: Pending_coinbase_stack_state.t
+        ; pending_coinbase_stack_state:
+            Pending_coinbase_stack_state.Stable.V1.t
         ; fee_excess: Amount.Signed.Stable.V1.t
         ; sok_digest: Sok_message.Digest.Stable.V1.t
         ; proof: Proof.Stable.V1.t }
@@ -1149,8 +1153,8 @@ let check_user_command ~sok_message ~source ~target pending_coinbase_stack t
     handler =
   check_transaction ~sok_message ~source ~target
     ~pending_coinbase_stack_state:
-      { Pending_coinbase_stack_state.source= pending_coinbase_stack
-      ; target= pending_coinbase_stack }
+      Pending_coinbase_stack_state.Stable.Latest.
+        {source= pending_coinbase_stack; target= pending_coinbase_stack}
     (User_command t) handler
 
 let generate_transaction_union_witness ?(preeval = false) sok_message source
@@ -1218,9 +1222,9 @@ struct
       merge_top_hash wrap_vk_bits ~sok_digest ~state1:ledger_hash1
         ~state2:ledger_hash3
         ~pending_coinbase_stack_state:
-          { Pending_coinbase_stack_state.source=
-              transition12.pending_coinbase_stack_state.source
-          ; target= transition23.pending_coinbase_stack_state.target }
+          Pending_coinbase_stack_state.Stable.Latest.
+            { source= transition12.pending_coinbase_stack_state.source
+            ; target= transition23.pending_coinbase_stack_state.target }
         ~fee_excess ~supply_increase
     in
     let prover_state =
@@ -1271,16 +1275,16 @@ struct
       user_command handler =
     of_transaction ~sok_digest ~source ~target
       ~pending_coinbase_stack_state:
-        { Pending_coinbase_stack_state.source= pending_coinbase_stack
-        ; target= pending_coinbase_stack }
+        Pending_coinbase_stack_state.Stable.Latest.
+          {source= pending_coinbase_stack; target= pending_coinbase_stack}
       (User_command user_command) handler
 
   let of_fee_transfer ~sok_digest ~source ~target ~pending_coinbase_stack
       transfer handler =
     of_transaction ~sok_digest ~source ~target
       ~pending_coinbase_stack_state:
-        { Pending_coinbase_stack_state.source= pending_coinbase_stack
-        ; target= pending_coinbase_stack }
+        Pending_coinbase_stack_state.Stable.Latest.
+          {source= pending_coinbase_stack; target= pending_coinbase_stack}
       (Fee_transfer transfer) handler
 
   let merge t1 t2 ~sok_digest =
@@ -1537,9 +1541,10 @@ let%test_module "transaction_snark" =
       in
       let signature = Schnorr.sign sender.private_key payload in
       User_command.check
-        { User_command.payload
-        ; sender= Public_key.of_private_key_exn sender.private_key
-        ; signature }
+        User_command.Poly.Stable.Latest.
+          { payload
+          ; sender= Public_key.of_private_key_exn sender.private_key
+          ; signature }
       |> Option.value_exn
 
     let keys = Keys.create ()
@@ -1618,9 +1623,9 @@ let%test_module "transaction_snark" =
                         ~len:User_command_memo.max_size_in_bytes))
               in
               let pending_coinbase_stack_state =
-                { Pending_coinbase_stack_state.source=
-                    Pending_coinbase.Stack.empty
-                ; target= Pending_coinbase.Stack.empty }
+                Pending_coinbase_stack_state.Stable.Latest.
+                  { source= Pending_coinbase.Stack.empty
+                  ; target= Pending_coinbase.Stack.empty }
               in
               let sok_digest =
                 Sok_message.create ~fee:Fee.zero

@@ -505,7 +505,7 @@ module type Pending_coinbase_stack_state_intf = sig
   type pending_coinbase_stack
 
   type t = {source: pending_coinbase_stack; target: pending_coinbase_stack}
-  [@@deriving sexp, bin_io, compare]
+  [@@deriving sexp, compare]
 end
 
 module type Ledger_proof_statement_intf = sig

@@ -205,13 +205,11 @@ module Make (L : Ledger_intf) : S with type ledger := L.t = struct
         module Stable = struct
           module V1 = struct
             module T = struct
-              let version = 1
-
               type t =
                 { user_command: User_command.Stable.V1.t
                 ; previous_receipt_chain_hash: Receipt.Chain_hash.Stable.V1.t
                 }
-              [@@deriving sexp, bin_io]
+              [@@deriving sexp, bin_io, version]
             end
 
             include T
@@ -486,7 +484,7 @@ module Make (L : Ledger_intf) : S with type ledger := L.t = struct
           { Undo.User_command_undo.common
           ; body= Stake_delegation {previous_delegate= sender_account.delegate}
           }
-    | Payment {Payment_payload.amount; receiver} ->
+    | Payment Payment_payload.Poly.Stable.Latest.({amount; receiver}) ->
         let%bind sender_balance' = sub_amount sender_account.balance amount in
         let undo emptys : Undo.User_command_undo.t =
           {common; body= Payment {previous_empty_accounts= emptys}}
