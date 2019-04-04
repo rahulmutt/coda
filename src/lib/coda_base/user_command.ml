@@ -74,7 +74,9 @@ module Stable = struct
   module Registered_V1 = Registrar.Register (V1)
 end
 
-include Stable.Latest
+type t = Stable.Latest.t [@@deriving sexp, yojson, hash]
+
+include Comparable.Make (Stable.Latest)
 
 type value = t
 

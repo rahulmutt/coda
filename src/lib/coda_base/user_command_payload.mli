@@ -20,23 +20,31 @@ module Body : sig
 end
 
 module Common : sig
-  type ('fee, 'nonce, 'memo) t_ = {fee: 'fee; nonce: 'nonce; memo: 'memo}
-  [@@deriving bin_io, eq, sexp, hash]
+  module Poly : sig
+    module Stable : sig
+      module V1 : sig
+        type ('fee, 'nonce, 'memo) t = {fee: 'fee; nonce: 'nonce; memo: 'memo}
+        [@@deriving bin_io, eq, sexp, hash, yojson, version]
+      end
 
-  type t =
-    ( Currency.Fee.Stable.V1.t
-    , Coda_numbers.Account_nonce.Stable.V1.t
-    , User_command_memo.t )
-    t_
-  [@@deriving eq, sexp, hash]
+      module Latest = V1
+    end
+  end
 
   module Stable : sig
     module V1 : sig
-      type nonrec t = t [@@deriving bin_io, eq, sexp, hash]
+      type t =
+        ( Currency.Fee.Stable.V1.t
+        , Coda_numbers.Account_nonce.Stable.V1.t
+        , User_command_memo.t )
+        Poly.Stable.V1.t
+      [@@deriving bin_io, eq, sexp, hash]
     end
 
     module Latest = V1
   end
+
+  type t = Stable.Latest.t [@@deriving eq, sexp, hash]
 
   val gen : t Quickcheck.Generator.t
 
@@ -44,7 +52,7 @@ module Common : sig
     ( Currency.Fee.var
     , Coda_numbers.Account_nonce.Unpacked.var
     , User_command_memo.Checked.t )
-    t_
+    Poly.Stable.Latest.t
 
   val typ : (var, t) Typ.t
 

@@ -27,7 +27,7 @@ module Stable : sig
   module Latest : module type of V1
 end
 
-type t = Stable.Latest.t
+type t = Stable.Latest.t [@@deriving sexp, yojson, hash]
 
 include Comparable.S with type t := t
 

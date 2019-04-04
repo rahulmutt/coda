@@ -376,7 +376,13 @@ module type Snark_pool_proof_intf = sig
 end
 
 module type User_command_intf = sig
-  type t [@@deriving sexp, eq, bin_io, yojson]
+  type t [@@deriving sexp, eq, yojson]
+
+  module Stable : sig
+    module V1 : sig
+      type nonrec t = t [@@deriving bin_io, sexp, eq, yojson]
+    end
+  end
 
   type public_key
 
@@ -790,7 +796,7 @@ module type Transaction_snark_scan_state_intf = sig
   module Stable :
     sig
       module V1 : sig
-        type t [@@deriving sexp, bin_io]
+        type t [@@deriving sexp, bin_io, version]
 
         val hash : t -> staged_ledger_aux_hash
       end
@@ -949,7 +955,7 @@ module type Staged_ledger_base_intf = sig
     module Stable :
       sig
         module V1 : sig
-          type t [@@deriving sexp, bin_io]
+          type t [@@deriving sexp, bin_io, version]
 
           val hash : t -> staged_ledger_aux_hash
         end
