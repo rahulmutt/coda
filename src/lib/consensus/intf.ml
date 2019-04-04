@@ -161,7 +161,9 @@ module type S = sig
    * Check that a consensus state was received at a valid time.
   *)
   val received_at_valid_time :
-    Consensus_state.Value.t -> time_received:Unix_timestamp.t -> bool
+       Consensus_state.Value.t
+    -> time_received:Unix_timestamp.t
+    -> (unit, string * Yojson.Safe.json list) result
 
   (**
    * Create a constrained, checked var for the next consensus state of

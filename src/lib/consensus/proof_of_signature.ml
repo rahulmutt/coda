@@ -228,7 +228,7 @@ let generate_transition ~previous_protocol_state ~blockchain_state ~time:_
   in
   (protocol_state, consensus_transition_data)
 
-let received_at_valid_time _ ~time_received:_ = true
+let received_at_valid_time _ ~time_received:_ = Ok ()
 
 let is_transition_valid_checked (transition : Snark_transition.var) =
   let Consensus_transition_data.({signature}) =

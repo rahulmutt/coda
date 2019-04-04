@@ -1849,7 +1849,12 @@ let received_within_window (epoch, slot) ~time_received =
   in
   let window_start = Epoch.slot_start_time epoch slot in
   let window_end = add window_start Constants.delta_duration in
-  window_start < time_received && time_received < window_end
+  if window_start < time_received && time_received < window_end then Ok ()
+  else
+    Error
+      [ ("window_start", to_yojson window_start)
+      ; ("window_end", to_yojson window_end)
+      ; ("time_received", to_yojson time_received) ]
 
 let received_at_valid_time (consensus_state : Consensus_state.Value.t)
     ~time_received =
@@ -2200,6 +2205,7 @@ let%test "Receive a valid consensus_state with a bit of delay" =
   let time_received = Epoch.slot_start_time curr_epoch new_slot in
   received_at_valid_time Consensus_state.genesis
     ~time_received:(to_unix_timestamp time_received)
+  |> Result.is_ok
 
 let%test "Receive an invalid consensus_state" =
   let epoch = Epoch.of_int 5 in
@@ -2215,8 +2221,9 @@ let%test "Receive an invalid consensus_state" =
   let times = [too_late; too_early] in
   List.for_all times ~f:(fun time ->
       not
-        (received_at_valid_time consensus_state
-           ~time_received:(to_unix_timestamp time)) )
+        ( received_at_valid_time consensus_state
+            ~time_received:(to_unix_timestamp time)
+        |> Result.is_ok ) )
 
 let%test_module "Proof of stake tests" =
   ( module struct
